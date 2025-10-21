@@ -12,20 +12,20 @@ namespace SimuGravitacional
     public partial class Form1 : Form
     {
         private Universo universo = new Universo();               // universo que contém os corpos e lógica
-        private Timer timer       = new Timer();                 // timer do Windows Forms para passos da simulação
+        private Timer timer = new Timer();                 // timer do Windows Forms para passos da simulação
         private GravitacaoDAO dao = new GravitacaoArquivoDAO(); //salvar e carregar em arquivo
 
-        private long iteracoesMax  = 0;       // número maximo de iterações a executar
+        private long iteracoesMax = 0;       // número maximo de iterações a executar
         private long iteracaoAtual = 0;      // contador da iteraçao atual
-        private float escala       = 1f;    // escala usada para desenhar
+        private float escala = 1f;    // escala usada para desenhar
 
-        private double deltaT = 0.1;
+        private double deltaT = 0.3;
 
         // Construtor do form
         public Form1()
         {
             InitializeComponent();           // método gerado pelo designer que cria controles
-            this.DoubleBuffered = true;      // ativa double buffering para reduzir flicker no desenho
+            this.DoubleBuffered = true;
             this.Paint += Form1_Paint;       // associa o evento Paint ao método de desenho
             timer.Tick += Timer_Tick;        // associa o evento Tick do timer ao método que faz o passo da simulação
         }
@@ -36,13 +36,13 @@ namespace SimuGravitacional
             try
             {
                 // le parametros digitados pelo usuario
-                int quantidade  = int.Parse(txtQtdCorpos.Text);
-                iteracoesMax    = long.Parse(txtQtdIteracoes.Text);
-                int intervalo   = int.Parse(txtTempoIteracoes.Text);
+                int quantidade = int.Parse(txtQtdCorpos.Text);
+                iteracoesMax = long.Parse(txtQtdIteracoes.Text);
+                int intervalo = int.Parse(txtTempoIteracoes.Text);
                 double massaMin = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
                 double massaMax = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
 
-                // se o campo deltaT não está vazio, sobrescreve o valor padrão
+                // se o campo deltaT não está vazio, sobrescreve o valor padrao
                 if (!string.IsNullOrWhiteSpace(txtDeltaT.Text))
                     deltaT = double.Parse(txtDeltaT.Text, CultureInfo.InvariantCulture);
 
@@ -68,7 +68,7 @@ namespace SimuGravitacional
             try
             {
                 // le quantidade e massas de entrada
-                int quantidade  = int.Parse(txtQtdCorpos.Text);
+                int quantidade = int.Parse(txtQtdCorpos.Text);
                 double massaMin = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
                 double massaMax = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
 
@@ -86,6 +86,8 @@ namespace SimuGravitacional
                 MessageBox.Show("Por favor insira valores numéricos válidos.");
             }
         }
+
+        // Evento do timer, executa um passo da simulação a cada tick
         private void Timer_Tick(object sender, EventArgs e)
         {
             // condição de parada,atingiu maximo de iteraçoes ou sobrou 1 ou 0 corpos
@@ -112,16 +114,33 @@ namespace SimuGravitacional
         // Método que inicia a simulação configurando o timer
         private void IniciarSimulacao(int intervalo)
         {
-            iteracaoAtual  = 0;     // zera o contador de iterações
+            iteracaoAtual = 0;     // zera o contador de iterações
             timer.Interval = intervalo; // define intervalo do timer
-            timer.Start();     
-            this.Invalidate(); 
+            timer.Start();
+            this.Invalidate();
+        }
+
+        // ---------------------------
+        // NOVO: Botão "Parar Simulação"
+        // ---------------------------
+        private void btParar_Click(object sender, EventArgs e)
+        {
+            // se o timer estiver ativo, para e informa o usuário
+            if (timer.Enabled)
+            {
+                timer.Stop();
+                MessageBox.Show("A simulação foi interrompida com sucesso!");
+            }
+            else
+            {
+                MessageBox.Show("A simulação já estava parada.");
+            }
         }
 
         // Ajusta a escala de desenho para que todos os corpos caibam na area disponivel
         private void AjustarEscala()
         {
-            if (universo.QuantidadeCorpos == 0) return; 
+            if (universo.QuantidadeCorpos == 0) return;
 
             // inicia limites com valores extremos
             double minX = double.MaxValue, minY = double.MaxValue;
@@ -148,11 +167,11 @@ namespace SimuGravitacional
 
             // cálculo da largura e altura ocupadas pelos corpos
             double larguraOcupada = maxX - minX;
-            double alturaOcupada  = maxY - minY;
+            double alturaOcupada = maxY - minY;
 
             // área disponível para desenho 
             int larguraDisponivel = this.ClientSize.Width - panel1.Width;
-            int alturaDisponivel  = this.ClientSize.Height;
+            int alturaDisponivel = this.ClientSize.Height;
 
             // evita divisão por zero
             if (larguraOcupada == 0 || alturaOcupada == 0)
@@ -165,8 +184,9 @@ namespace SimuGravitacional
             // escolhe a menor escala
             escala = Math.Min(escalaX, escalaY);
 
-            // limita a escala a no máximo 1 e trata valores inválidos
-            if (escala > 1f || float.IsInfinity(escala) || float.IsNaN(escala)) escala = 1f;
+            // trata valores inválidos (mas não limita o máximo)
+            if (float.IsInfinity(escala) || float.IsNaN(escala))
+                escala = 1f;
 
             // mostra a escala
             txtEscala.Text = escala.ToString("F10");
@@ -216,7 +236,7 @@ namespace SimuGravitacional
                     float diametro = raio * 2;
 
                     // desenha com Brush vermelho
-                    using (Brush pincel = new SolidBrush(Color.Red))
+                    using (Brush pincel = new SolidBrush(Color.White))
                     {
                         g.FillEllipse(pincel, x, y, diametro, diametro);
                     }

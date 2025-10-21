@@ -32,6 +32,7 @@
             txtDeltaT = new TextBox();
             btSalvar = new Button();
             btCarregar = new Button();
+            btParar = new Button();
             panel1 = new Panel();
             lblQtdCorposRestantes = new Label();
             txtEscala = new TextBox();
@@ -161,7 +162,7 @@
             txtDeltaT.Name = "txtDeltaT";
             txtDeltaT.Size = new Size(105, 23);
             txtDeltaT.TabIndex = 13;
-            txtDeltaT.Text = "0.1";
+            txtDeltaT.Text = "0.3";
             // 
             // btSalvar
             // 
@@ -182,6 +183,16 @@
             btCarregar.Text = "Carregar Simulação";
             btCarregar.UseVisualStyleBackColor = true;
             btCarregar.Click += btCarregar_Click;
+            // 
+            // btParar
+            // 
+            btParar.Location = new Point(41, 594);
+            btParar.Name = "btParar";
+            btParar.Size = new Size(105, 23);
+            btParar.TabIndex = 20;
+            btParar.Text = "Parar Simulação";
+            btParar.UseVisualStyleBackColor = true;
+            btParar.Click += btParar_Click;
             // 
             // panel1
             // 
@@ -206,6 +217,7 @@
             panel1.Controls.Add(txtDeltaT);
             panel1.Controls.Add(btSalvar);
             panel1.Controls.Add(btCarregar);
+            panel1.Controls.Add(btParar);
             panel1.Dock = DockStyle.Right;
             panel1.Location = new Point(1026, 0);
             panel1.Name = "panel1";
@@ -280,6 +292,7 @@
         private TextBox txtDeltaT;
         private Button btSalvar;
         private Button btCarregar;
+        private Button btParar;
         private Panel panel1;
         private Label lblEscala;
         private TextBox txtEscala;
