@@ -119,10 +119,6 @@ namespace SimuGravitacional
             timer.Start();
             this.Invalidate();
         }
-
-        // ---------------------------
-        // NOVO: Botão "Parar Simulação"
-        // ---------------------------
         private void btParar_Click(object sender, EventArgs e)
         {
             // se o timer estiver ativo, para e informa o usuário
