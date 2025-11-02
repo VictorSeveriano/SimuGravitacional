@@ -12,12 +12,12 @@ namespace SimuGravitacional
     public partial class Form1 : Form
     {
         private Universo universo = new Universo();               // universo que contém os corpos e lógica
-        private Timer timer = new Timer();                 // timer do Windows Forms para passos da simulação
+        private Timer timer       = new Timer();                 // timer do Windows Forms para passos da simulação
         private GravitacaoDAO dao = new GravitacaoArquivoDAO(); //salvar e carregar em arquivo
 
-        private long iteracoesMax = 0;       // número maximo de iterações a executar
+        private long iteracoesMax  = 0;       // número maximo de iterações a executar
         private long iteracaoAtual = 0;      // contador da iteraçao atual
-        private float escala = 1f;    // escala usada para desenhar
+        private float escala       = 1f;    // escala usada para desenhar
 
         private double deltaT = 0.3;
 
@@ -36,9 +36,9 @@ namespace SimuGravitacional
             try
             {
                 // le parametros digitados pelo usuario
-                int quantidade = int.Parse(txtQtdCorpos.Text);
-                iteracoesMax = long.Parse(txtQtdIteracoes.Text);
-                int intervalo = int.Parse(txtTempoIteracoes.Text);
+                int quantidade  = int.Parse(txtQtdCorpos.Text);
+                iteracoesMax    = long.Parse(txtQtdIteracoes.Text);
+                int intervalo   = int.Parse(txtTempoIteracoes.Text);
                 double massaMin = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
                 double massaMax = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
 
@@ -68,7 +68,7 @@ namespace SimuGravitacional
             try
             {
                 // le quantidade e massas de entrada
-                int quantidade = int.Parse(txtQtdCorpos.Text);
+                int quantidade  = int.Parse(txtQtdCorpos.Text);
                 double massaMin = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
                 double massaMax = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
 
@@ -167,11 +167,11 @@ namespace SimuGravitacional
 
             // cálculo da largura e altura ocupadas pelos corpos
             double larguraOcupada = maxX - minX;
-            double alturaOcupada = maxY - minY;
+            double alturaOcupada  = maxY - minY;
 
             // área disponível para desenho 
             int larguraDisponivel = this.ClientSize.Width - panel1.Width;
-            int alturaDisponivel = this.ClientSize.Height;
+            int alturaDisponivel  = this.ClientSize.Height;
 
             // evita divisão por zero
             if (larguraOcupada == 0 || alturaOcupada == 0)
@@ -265,8 +265,8 @@ namespace SimuGravitacional
         // Botão "Carregar", carrega e atualiza a interface com os dados lidos
         private void btCarregar_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "Arquivos TXT (*.txt)|*.txt";
+            OpenFileDialog ofd   = new OpenFileDialog();
+            ofd.Filter           = "Arquivos TXT (*.txt)|*.txt";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 int qtdIteracoes, tempoIteracao;
