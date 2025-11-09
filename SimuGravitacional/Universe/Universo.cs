@@ -8,6 +8,8 @@ using System.Linq;
 public class Universo
 {
     // Constante de gravitação
+    //private const double G = 0.0000090;
+
     private const double G = 6.6743e-11;
 
     // Array interno de corpos
