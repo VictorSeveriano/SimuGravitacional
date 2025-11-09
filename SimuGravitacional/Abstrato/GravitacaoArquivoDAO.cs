@@ -1,6 +1,4 @@
-﻿// Implementaçao que persiste,recupera simulaçoes em arquivos de texto
-
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 
@@ -8,83 +6,105 @@ namespace SimuGravitacional.Abstrato
 {
     public class GravitacaoArquivoDAO : GravitacaoDAO
     {
-        // Carrega um arquivo de simulaçao e retorna um universo configurado.
-        public override Universo Carregar(string caminhoArquivo, out int qtdIteracoes, out int tempoIteracao, out double deltaT)
+        public override Universo Carregar(string caminhoArquivo, out int iteracaoSalva, out int tempoIteracao)
         {
-            Universo universo = new Universo(); // cria instância que será preenchida
-            var linhas        = File.ReadAllLines(caminhoArquivo); // le todas as linhas do arquivo 
-            var primeiraLinha = linhas[0].Split(';'); // divide a primeira linha por ; para extrair os dados
+            Universo universo = new Universo();
+            var linhas        = File.ReadAllLines(caminhoArquivo);
 
-            int qtdCorpos = int.Parse(primeiraLinha[0]);
-            qtdIteracoes  = int.Parse(primeiraLinha[1]);
-            tempoIteracao = int.Parse(primeiraLinha[2]);
+            // Cabeçalho de Simulação
+            var primeiraLinha = linhas[0].Split(';');
+            iteracaoSalva  = int.Parse(primeiraLinha[0]);
+            tempoIteracao  = int.Parse(primeiraLinha[1]);
 
-            // caso deltat não esteja ela usa 0.1 por padrao
-            deltaT = primeiraLinha.Length > 3 ? double.Parse(primeiraLinha[3], CultureInfo.InvariantCulture) : 0.1;
+            int linhaAtual = 1;
 
-            // prepara array de corpos do tamanho informado
-            Corpo[] corpos = new Corpo[qtdCorpos];
-
-            // para cada corpo, parseia a linha correspondente
-            for (int i = 0; i < qtdCorpos; i++)
+            // Pula linhas até encontrar o bloco ESTADO_INICIAL
+            while (linhaAtual < linhas.Length && linhas[linhaAtual] != "[ESTADO_INICIAL]")
             {
-                var dadosCorpo = linhas[i + 1].Split(';');
-
-                // Le todos os dados primeiro e converte para double onde necessário
-                string nome  = dadosCorpo[0];
-                double massa = double.Parse(dadosCorpo[1], CultureInfo.InvariantCulture);
-                double raio  = double.Parse(dadosCorpo[2], CultureInfo.InvariantCulture);
-                double posX  = double.Parse(dadosCorpo[3], CultureInfo.InvariantCulture);
-                double posY  = double.Parse(dadosCorpo[4], CultureInfo.InvariantCulture);
-                double velX  = double.Parse(dadosCorpo[5], CultureInfo.InvariantCulture);
-                double velY  = double.Parse(dadosCorpo[6], CultureInfo.InvariantCulture);
-
-                // Calcula a densidade a partir do raio e massa
-                double volume    = 4.0 / 3.0 * Math.PI * Math.Pow(raio, 3);
-                double densidade = volume > 0 ? massa / volume : 0;
-
-                // cria o objeto corpo com a densidade calculada
-                Corpo corpo = new Corpo(nome, massa, densidade, posX, posY, velX, velY);
-
-                corpos[i] = corpo;
+                linhaAtual++;
             }
 
-            // define os corpos lidos no universo 
-            universo.DefinirCorpos(corpos);
+            // Se encontrou o bloco inicial, carrega ele para o reprise
+            if (linhaAtual < linhas.Length && linhas[linhaAtual] == "[ESTADO_INICIAL]")
+            {
+                linhaAtual++; // Move para a linha da quantidade
+                int qtdCorpos = int.Parse(linhas[linhaAtual]);
+                linhaAtual++; // Move para o primeiro corpo
+
+                Corpo[] corpos = new Corpo[qtdCorpos];
+
+                for (int i = 0; i < qtdCorpos; i++)
+                {
+                    // Evita ler fora dos limites do arquivo se o arquivo estiver corrompido
+                    if (linhaAtual + i >= linhas.Length) break;
+
+                    var dadosCorpo = linhas[linhaAtual + i].Split(';');
+
+                    string nome  = dadosCorpo[0];
+                    double massa = double.Parse(dadosCorpo[1], CultureInfo.InvariantCulture);
+                    double raio  = double.Parse(dadosCorpo[2], CultureInfo.InvariantCulture);
+                    double posX  = double.Parse(dadosCorpo[3], CultureInfo.InvariantCulture);
+                    double posY  = double.Parse(dadosCorpo[4], CultureInfo.InvariantCulture);
+                    double velX  = double.Parse(dadosCorpo[5], CultureInfo.InvariantCulture);
+                    double velY  = double.Parse(dadosCorpo[6], CultureInfo.InvariantCulture);
+
+                    double volume = 4.0 / 3.0 * Math.PI * Math.Pow(raio, 3);
+                    double densidade = volume > 0 ? massa / volume : 0;
+
+                    corpos[i] = new Corpo(nome, massa, densidade, posX, posY, velX, velY);
+                }
+
+                universo.DefinirCorpos(corpos);
+            }
+            else
+            {
+                // Se não encontrar o bloco, o arquivo está em formato antigo ou corrompido
+                throw new Exception("Formato de arquivo inválido. Bloco [ESTADO_INICIAL] não encontrado.");
+            }
 
             return universo;
         }
 
-        // Salva o Universo em um arquivo texto no formato compatível com o metodo Carregar
-        public override void Salvar(string caminhoArquivo, Universo universo, int qtdIteracoes, int tempoIteracao, double deltaT)
+        // Salva ambos os estados Atual e Inicial
+        public override void Salvar(string caminhoArquivo, Universo universoInicial, Universo universoAtual, int iteracaoAtual, int tempoIteracao)
         {
-            // usa StreamWriter dentro de using para garantir fechamento do arquivo
             using (StreamWriter sw = new StreamWriter(caminhoArquivo))
             {
-                // escreve a linha de cabeçalho com qtdCorpos, qtdIteracoes, tempoIteracao e deltaT
-                sw.WriteLine($"{universo.QuantidadeCorpos};{qtdIteracoes};{tempoIteracao};{deltaT.ToString(CultureInfo.InvariantCulture)}");
+                // Cabeçalho de Simulação Iteração atual e tempo
+                sw.WriteLine($"{iteracaoAtual};{tempoIteracao}");
 
-                // percorre todos os indices de 0 ate QuantidadeCorpos - 1
-                for (int i = 0; i < universo.QuantidadeCorpos; i++)
+                // Estado Atual para sua inspeção, com corpos fundidos
+                sw.WriteLine("[ESTADO_ATUAL]");
+                sw.WriteLine(universoAtual.QuantidadeCorpos);
+                EscreverCorpos(sw, universoAtual); // // Usa o escrevercorpos para não repetir
+
+                // Estado Inicial para o reprise
+                sw.WriteLine("[ESTADO_INICIAL]");
+                sw.WriteLine(universoInicial.QuantidadeCorpos);
+                EscreverCorpos(sw, universoInicial); // Usa o escrevercorpos para não repetir
+            }
+        }
+
+        //para não repetir código de escrita
+        private void EscreverCorpos(StreamWriter sw, Universo universo)
+        {
+            for (int i = 0; i < universo.QuantidadeCorpos; i++)
+            {
+                var corpo  = universo.Corpos[i];
+                if (corpo != null)
                 {
-                    var corpo = universo.Corpos[i];
-                    if (corpo != null)
-                    {
-                        // monta linha com os dados do corpo
-                        string linha = string.Join(";",
-                            corpo.Nome,
-                            corpo.Massa.ToString(CultureInfo.InvariantCulture),
-                            corpo.Raio.ToString(CultureInfo.InvariantCulture),
-                            corpo.PosX.ToString(CultureInfo.InvariantCulture),
-                            corpo.PosY.ToString(CultureInfo.InvariantCulture),
-                            corpo.VelX.ToString(CultureInfo.InvariantCulture),
-                            corpo.VelY.ToString(CultureInfo.InvariantCulture)
-                        );
-                        // escreve a linha no arquivo
-                        sw.WriteLine(linha);
-                    }
+                    string linha = string.Join(";",
+                        corpo.Nome,
+                        corpo.Massa.ToString(CultureInfo.InvariantCulture),
+                        corpo.Raio.ToString(CultureInfo.InvariantCulture),
+                        corpo.PosX.ToString(CultureInfo.InvariantCulture),
+                        corpo.PosY.ToString(CultureInfo.InvariantCulture),
+                        corpo.VelX.ToString(CultureInfo.InvariantCulture),
+                        corpo.VelY.ToString(CultureInfo.InvariantCulture)
+                    );
+                    sw.WriteLine(linha);
                 }
-            } 
+            }
         }
     }
 }

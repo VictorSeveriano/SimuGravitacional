@@ -1,14 +1,14 @@
 ﻿// Classe que representa um corpo físico na simulaçao, e possui suas propriedades
 public class Corpo
 {
-    public string Nome      { get; set; }   
-    public double Massa     { get; set; }   
-    public double Densidade { get; set; }   
-    public double PosX      { get; set; }   
-    public double PosY      { get; set; }   
-    public double VelX      { get; set; }   
-    public double VelY      { get; set; }  
-    public double Raio      { get; private set; } 
+    public string Nome      { get; set; }
+    public double Massa     { get; set; }
+    public double Densidade { get; set; }
+    public double PosX      { get; set; }
+    public double PosY      { get; set; }
+    public double VelX      { get; set; }
+    public double VelY      { get; set; }
+    public double Raio      { get; private set; }
 
     // Construtor, inicializa todas as propriedades e calcula o raio
     public Corpo(string nome, double massa, double densidade, double posX, double posY, double velX, double velY)
@@ -23,6 +23,20 @@ public class Corpo
         this.VelY      = velY;
 
         this.Raio = CalcularRaio(); // calcula o raio com base na massa e densidade
+    }
+
+    // Construtor de Cópia
+    // Cria uma nova instância de Corpo baseada em um corpo existente
+    public Corpo(Corpo original)
+    {
+        this.Nome      = original.Nome;
+        this.Massa     = original.Massa;
+        this.Densidade = original.Densidade;
+        this.PosX      = original.PosX;
+        this.PosY      = original.PosY;
+        this.VelX      = original.VelX;
+        this.VelY      = original.VelY;
+        this.Raio      = original.Raio; 
     }
 
     // calcula o raio 
@@ -64,20 +78,20 @@ public class Corpo
         double posFinalY = (c1.Massa * c1.PosY + c2.Massa * c2.PosY) / massaTotal;
 
         // Para densidade resultante vamos calcula volumes individuais
-        double volume1        = (c1.Densidade > 0) ? (c1.Massa / c1.Densidade) : 0;
-        double volume2        = (c2.Densidade > 0) ? (c2.Massa / c2.Densidade) : 0;
-        double volumeTotal    = volume1 + volume2;
+        double volume1 = (c1.Densidade > 0) ? (c1.Massa / c1.Densidade) : 0;
+        double volume2 = (c2.Densidade > 0) ? (c2.Massa / c2.Densidade) : 0;
+        double volumeTotal = volume1 + volume2;
         double densidadeFinal = (volumeTotal > 0) ? (massaTotal / volumeTotal) : 0; // soma volumes e obtem densidade final
 
         // cria o corpo resultante com nome composto e parametros calculados
         Corpo corpoResultante = new Corpo(
-            nome:      $"{c1.Nome}-{c2.Nome}", // concatena nomes para identificar origem
-            massa:     massaTotal,
+            nome: $"{c1.Nome}-{c2.Nome}", // concatena nomes para identificar origem
+            massa: massaTotal,
             densidade: densidadeFinal,
-            posX:      posFinalX,
-            posY:      posFinalY,
-            velX:      velFinalX,
-            velY:      velFinalY
+            posX: posFinalX,
+            posY: posFinalY,
+            velX: velFinalX,
+            velY: velFinalY
         );
 
         return corpoResultante;

@@ -1,13 +1,11 @@
-﻿// classe abstrata para persistência salvar,carregar
-
-namespace SimuGravitacional.Abstrato
+﻿namespace SimuGravitacional.Abstrato
 {
     public abstract class GravitacaoDAO
     {
-        // Assina o metodo de salvar, caminho, universo, e os parametros da simulação
-        public abstract void Salvar(string caminhoArquivo, Universo universo, int qtdIteracoes, int tempoIteracao, double deltaT);
+        // Função que salva as informações da simulação em um arquivo
+        public abstract void Salvar(string caminhoArquivo, Universo universoInicial, Universo universoAtual, int iteracaoAtual, int tempoIteracao);
 
-        // Assina o metodo de carregar, retorna Universo e traz parametros da simulação
-        public abstract Universo Carregar(string caminhoArquivo, out int qtdIteracoes, out int tempoIteracao, out double deltaT);
+        // função que carrega as informações da simulação de um arquivo
+        public abstract Universo Carregar(string caminhoArquivo, out int iteracaoSalva, out int tempoIteracao);
     }
 }

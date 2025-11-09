@@ -28,8 +28,6 @@
             txtMassaMax = new TextBox();
             btcalcular = new Button();
             btAleatorio = new Button();
-            lblDeltaT = new Label();
-            txtDeltaT = new TextBox();
             btSalvar = new Button();
             btCarregar = new Button();
             btParar = new Button();
@@ -146,24 +144,6 @@
             btAleatorio.UseVisualStyleBackColor = true;
             btAleatorio.Click += BtAleatorio_Click;
             // 
-            // lblDeltaT
-            // 
-            lblDeltaT.AutoSize = true;
-            lblDeltaT.ForeColor = SystemColors.ControlLightLight;
-            lblDeltaT.Location = new Point(41, 295);
-            lblDeltaT.Name = "lblDeltaT";
-            lblDeltaT.Size = new Size(102, 15);
-            lblDeltaT.TabIndex = 12;
-            lblDeltaT.Text = "DeltaT (segundos)";
-            // 
-            // txtDeltaT
-            // 
-            txtDeltaT.Location = new Point(41, 313);
-            txtDeltaT.Name = "txtDeltaT";
-            txtDeltaT.Size = new Size(105, 23);
-            txtDeltaT.TabIndex = 13;
-            txtDeltaT.Text = "0.3";
-            // 
             // btSalvar
             // 
             btSalvar.Location = new Point(41, 536);
@@ -213,8 +193,6 @@
             panel1.Controls.Add(lblTempoIteracoes);
             panel1.Controls.Add(lblMassaMin);
             panel1.Controls.Add(txtTempoIteracoes);
-            panel1.Controls.Add(lblDeltaT);
-            panel1.Controls.Add(txtDeltaT);
             panel1.Controls.Add(btSalvar);
             panel1.Controls.Add(btCarregar);
             panel1.Controls.Add(btParar);
@@ -228,7 +206,7 @@
             // 
             lblQtdCorposRestantes.AutoSize = true;
             lblQtdCorposRestantes.ForeColor = SystemColors.ControlLightLight;
-            lblQtdCorposRestantes.Location = new Point(44, 339);
+            lblQtdCorposRestantes.Location = new Point(48, 295);
             lblQtdCorposRestantes.Name = "lblQtdCorposRestantes";
             lblQtdCorposRestantes.Size = new Size(98, 15);
             lblQtdCorposRestantes.TabIndex = 18;
@@ -236,7 +214,7 @@
             // 
             // txtEscala
             // 
-            txtEscala.Location = new Point(41, 401);
+            txtEscala.Location = new Point(41, 357);
             txtEscala.Name = "txtEscala";
             txtEscala.ReadOnly = true;
             txtEscala.Size = new Size(105, 23);
@@ -244,7 +222,7 @@
             // 
             // txtQtdCorposRestantes
             // 
-            txtQtdCorposRestantes.Location = new Point(41, 357);
+            txtQtdCorposRestantes.Location = new Point(41, 313);
             txtQtdCorposRestantes.Name = "txtQtdCorposRestantes";
             txtQtdCorposRestantes.ReadOnly = true;
             txtQtdCorposRestantes.Size = new Size(105, 23);
@@ -254,7 +232,7 @@
             // 
             lblEscala.AutoSize = true;
             lblEscala.ForeColor = SystemColors.ControlLightLight;
-            lblEscala.Location = new Point(75, 383);
+            lblEscala.Location = new Point(74, 339);
             lblEscala.Name = "lblEscala";
             lblEscala.Size = new Size(39, 15);
             lblEscala.TabIndex = 16;
@@ -288,8 +266,6 @@
         private TextBox txtMassaMax;
         private Button btcalcular;
         private Button btAleatorio;
-        private Label lblDeltaT;
-        private TextBox txtDeltaT;
         private Button btSalvar;
         private Button btCarregar;
         private Button btParar;

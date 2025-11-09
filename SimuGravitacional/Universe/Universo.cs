@@ -1,15 +1,13 @@
-﻿// Gerencia os corpos e a logica de simulação
+﻿// Gerencia os corpos e a lógica de simulação
 
-using SimuGravitacional;
+using SimuGravitacional; 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 public class Universo
 {
-    // Constante de gravitação
-    //private const double G = 0.0000090;
-
+    // Constante de gravitação universal 
     private const double G = 6.6743e-11;
 
     // Array interno de corpos
@@ -18,17 +16,34 @@ public class Universo
     // Contador de quantos corpos existem atualmente
     public int QuantidadeCorpos { get; private set; }
 
-    //inicializa universo vazio
+    // Inicializa universo vazio
     public Universo()
     {
         Corpos = new Corpo[0];
         QuantidadeCorpos = 0;
     }
 
-    // Insere quantidade corpos aleatórios dentro da área definida
+    // Método Clone para criar uma cópia do Universo
+    public Universo Clone()
+    {
+        Universo novoUniverso = new Universo();
+        novoUniverso.Corpos = new Corpo[this.QuantidadeCorpos];
+
+        for (int i = 0; i < this.QuantidadeCorpos; i++)
+        {
+            if (this.Corpos[i] != null)
+            {
+                // Usa o novo construtor de cópia do Corpo
+                novoUniverso.Corpos[i] = new Corpo(this.Corpos[i]);
+            }
+        }
+        novoUniverso.QuantidadeCorpos = this.QuantidadeCorpos;
+        return novoUniverso;
+    }
+
+    // Insere quantidade de corpos aleatórios dentro da área definida
     public void InserirCorpos(int quantidade, double massaMin, double massaMax, int larguraMax, int alturaMax)
     {
-        // se quantidade for invalida, zera o universo
         if (quantidade <= 0)
         {
             Corpos = new Corpo[0];
@@ -36,7 +51,6 @@ public class Universo
             return;
         }
 
-        // inicializa array com tamanho quantidade
         Corpos = new Corpo[quantidade];
         QuantidadeCorpos = 0;
 
@@ -44,29 +58,26 @@ public class Universo
 
         for (int i = 0; i < quantidade; i++)
         {
-            // massa aleatória entre massaMin e massaMax
             double massa = rnd.NextDouble() * (massaMax - massaMin) + massaMin;
 
-            // densidade aleatória entre densidade do hidrogênio e do ósmio
+            // densidade aleatória entre hidrogênio e ósmio
             const double DENSIDADE_MIN_HIDROGENIO = 0.0899;
             const double DENSIDADE_MAX_OSMIO = 22590.0;
             double densidade = rnd.NextDouble() * (DENSIDADE_MAX_OSMIO - DENSIDADE_MIN_HIDROGENIO) + DENSIDADE_MIN_HIDROGENIO;
 
-            // posição aleatória, evitando bordas
             double posX = rnd.Next(10, Math.Max(11, larguraMax - 10));
             double posY = rnd.Next(10, Math.Max(11, alturaMax - 10));
 
-            // velocidade inicial nula — os corpos começam parados
+            // velocidade inicial zero
             double velX = 0;
             double velY = 0;
 
-            // cria o novo corpo e adiciona ao universo
             Corpo novoCorpo = new Corpo($"Corpo{i + 1}", massa, densidade, posX, posY, velX, velY);
             AdicionarCorpo(novoCorpo);
         }
     }
 
-    // Substitui todos os corpos do universo por um array fornecido
+    // Substitui todos os corpos do universo por um novo array
     public void DefinirCorpos(Corpo[] novosCorpos)
     {
         if (novosCorpos == null)
@@ -83,25 +94,24 @@ public class Universo
 
     public void AdicionarCorpo(Corpo novoCorpo)
     {
-        // se o array está cheio, dobra a capacidade
         if (QuantidadeCorpos == Corpos.Length)
         {
             int novaCapacidade = Corpos.Length == 0 ? 4 : Corpos.Length * 2;
-            Corpo[] novoArray = new Corpo[novaCapacidade];
+            Corpo[] novoArray  = new Corpo[novaCapacidade];
             Array.Copy(Corpos, novoArray, QuantidadeCorpos);
-            Corpos = novoArray;
+            Corpos             = novoArray;
         }
 
         Corpos[QuantidadeCorpos] = novoCorpo;
         QuantidadeCorpos++;
     }
 
-    // Simula um passo de tempo, calcula as forças, atualiza velocidade, pos e trata colisoes
-    public void SimularPasso(double tempoDoPasso)
+    // Cada tick do timer é tratado como uma unidade de tempo fixa
+    public void SimularPasso()
     {
         var proximosEstados = new Dictionary<Corpo, (double velX, double velY, double posX, double posY)>();
 
-        //Para cada corpo, calcula a força total exercida por todos os outros corpos
+        // Calcula a força gravitacional entre todos os pares de corpos
         for (int i = 0; i < QuantidadeCorpos; i++)
         {
             var corpoA = Corpos[i];
@@ -130,19 +140,21 @@ public class Universo
                 forcaTotalY += forcaY;
             }
 
+            // Calcula aceleração resultante
             double aceleracaoX = forcaTotalX / corpoA.Massa;
             double aceleracaoY = forcaTotalY / corpoA.Massa;
 
-            double novaVelX = corpoA.VelX + (aceleracaoX * tempoDoPasso);
-            double novaVelY = corpoA.VelY + (aceleracaoY * tempoDoPasso);
+            // Atualiza velocidade e posição — tempo de passo implícito (1 unidade)
+            double novaVelX = corpoA.VelX + aceleracaoX;
+            double novaVelY = corpoA.VelY + aceleracaoY;
 
-            double novaPosX = corpoA.PosX + (corpoA.VelX * tempoDoPasso) + (0.5 * aceleracaoX * tempoDoPasso * tempoDoPasso);
-            double novaPosY = corpoA.PosY + (corpoA.VelY * tempoDoPasso) + (0.5 * aceleracaoY * tempoDoPasso * tempoDoPasso);
+            double novaPosX = corpoA.PosX + corpoA.VelX + (0.5 * aceleracaoX);
+            double novaPosY = corpoA.PosY + corpoA.VelY + (0.5 * aceleracaoY);
 
             proximosEstados[corpoA] = (novaVelX, novaVelY, novaPosX, novaPosY);
         }
 
-        // aplica os novos estados
+        // Aplica os novos estados calculados
         for (int i = 0; i < QuantidadeCorpos; i++)
         {
             var corpo = Corpos[i];
@@ -155,21 +167,22 @@ public class Universo
             corpo.PosY = novoEstado.posY;
         }
 
-        // Detecta e trata colisões
+        // Trata colisões e fusões de corpos
         var corposParaRemover = new HashSet<Corpo>();
         var corposParaAdicionar = new List<Corpo>();
 
+        // Verifica todas as combinações de corpos para colisões
         for (int i = 0; i < QuantidadeCorpos; i++)
         {
             for (int j = i + 1; j < QuantidadeCorpos; j++)
             {
                 Corpo c1 = Corpos[i];
                 Corpo c2 = Corpos[j];
-                if (c1 == null || c2 == null) continue;
+                if (c1   == null || c2 == null) continue;
                 if (corposParaRemover.Contains(c1) || corposParaRemover.Contains(c2)) continue;
 
-                double dX = c2.PosX - c1.PosX;
-                double dY = c2.PosY - c1.PosY;
+                double dX        = c2.PosX - c1.PosX;
+                double dY        = c2.PosY - c1.PosY;
                 double distancia = Math.Sqrt(dX * dX + dY * dY);
 
                 if (distancia < (c1.Raio + c2.Raio))
@@ -182,17 +195,18 @@ public class Universo
             }
         }
 
+        // Atualiza o array de corpos removendo os fundidos e adicionando os novos
         if (corposParaRemover.Any())
         {
             var proximosCorpos = new List<Corpo>(QuantidadeCorpos);
-            for (int i = 0; i < QuantidadeCorpos; i++)
+            for (int i         = 0; i < QuantidadeCorpos; i++)
             {
                 if (!corposParaRemover.Contains(Corpos[i]))
                     proximosCorpos.Add(Corpos[i]);
             }
             proximosCorpos.AddRange(corposParaAdicionar);
 
-            Corpos = proximosCorpos.ToArray();
+            Corpos           = proximosCorpos.ToArray();
             QuantidadeCorpos = Corpos.Length;
         }
     }
