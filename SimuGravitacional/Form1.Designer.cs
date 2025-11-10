@@ -246,7 +246,7 @@
             ClientSize = new Size(1194, 636);
             Controls.Add(panel1);
             Name = "Form1";
-            Text = "Simulador Gravitacional by Grupo CTURB";
+            Text = "Simulador Gravitacional by Grupo CTURB - Severiano";
             Load += Form1_Load;
             panel1.ResumeLayout(false);
             panel1.PerformLayout();

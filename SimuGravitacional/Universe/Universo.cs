@@ -1,9 +1,11 @@
 ﻿// Gerencia os corpos e a lógica de simulação
 
-using SimuGravitacional; 
+using SimuGravitacional;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks; // Adicionado para Parallel.For
+using System.Collections.Concurrent; // Adicionado para ConcurrentDictionary
 
 public class Universo
 {
@@ -97,9 +99,9 @@ public class Universo
         if (QuantidadeCorpos == Corpos.Length)
         {
             int novaCapacidade = Corpos.Length == 0 ? 4 : Corpos.Length * 2;
-            Corpo[] novoArray  = new Corpo[novaCapacidade];
+            Corpo[] novoArray = new Corpo[novaCapacidade];
             Array.Copy(Corpos, novoArray, QuantidadeCorpos);
-            Corpos             = novoArray;
+            Corpos = novoArray;
         }
 
         Corpos[QuantidadeCorpos] = novoCorpo;
@@ -109,104 +111,133 @@ public class Universo
     // Cada tick do timer é tratado como uma unidade de tempo fixa
     public void SimularPasso()
     {
-        var proximosEstados = new Dictionary<Corpo, (double velX, double velY, double posX, double posY)>();
+        // usando o ConcurrentDictionary para ser threadsafe
+        var proximosEstados = new ConcurrentDictionary<Corpo, (double velX, double velY, double posX, double posY)>();
 
-        // Calcula a força gravitacional entre todos os pares de corpos
-        for (int i = 0; i < QuantidadeCorpos; i++)
+        // Usa Parallel.For para dividir cálculos entre múltiplos núcleos
+        Parallel.For(0, QuantidadeCorpos, i =>
         {
+            // Corpo atual
             var corpoA = Corpos[i];
-            if (corpoA == null) continue;
+            if (corpoA == null) return; // ignora corpo nulo
 
             double forcaTotalX = 0;
             double forcaTotalY = 0;
 
+            // Loop interno calcula a força de todos os outros corpos sobre corpoA
             for (int j = 0; j < QuantidadeCorpos; j++)
             {
-                if (i == j) continue;
+                if (i == j) continue; // evita comparar o mesmo corpo
                 var corpoB = Corpos[j];
                 if (corpoB == null) continue;
 
+                // Distância entre corpos
                 double dX = corpoB.PosX - corpoA.PosX;
                 double dY = corpoB.PosY - corpoA.PosY;
                 double distancia = Math.Sqrt(dX * dX + dY * dY);
+                if (distancia < 1e-6) continue; // evita divisões por zero
 
-                if (distancia < 1e-6) continue;
+                // Calcula força gravitacional
+                double forcaMag = (G * corpoA.Massa * corpoB.Massa) / (distancia * distancia);
 
-                double forcaMagnitude = (G * corpoA.Massa * corpoB.Massa) / (distancia * distancia);
-                double forcaX = forcaMagnitude * (dX / distancia);
-                double forcaY = forcaMagnitude * (dY / distancia);
+                // Direciona a força nos eixos X e Y
+                double forcaX = forcaMag * (dX / distancia);
+                double forcaY = forcaMag * (dY / distancia);
 
+                // Soma as forças totais aplicadas ao corpoA
                 forcaTotalX += forcaX;
                 forcaTotalY += forcaY;
             }
 
             // Calcula aceleração resultante
-            double aceleracaoX = forcaTotalX / corpoA.Massa;
-            double aceleracaoY = forcaTotalY / corpoA.Massa;
+            double acelX = forcaTotalX / corpoA.Massa;
+            double acelY = forcaTotalY / corpoA.Massa;
 
-            // Atualiza velocidade e posição — tempo de passo implícito (1 unidade)
-            double novaVelX = corpoA.VelX + aceleracaoX;
-            double novaVelY = corpoA.VelY + aceleracaoY;
+            // Atualiza velocidade com base na aceleração
+            double novaVelX = corpoA.VelX + acelX;
+            double novaVelY = corpoA.VelY + acelY;
 
-            double novaPosX = corpoA.PosX + corpoA.VelX + (0.5 * aceleracaoX);
-            double novaPosY = corpoA.PosY + corpoA.VelY + (0.5 * aceleracaoY);
+            // Atualiza posição (usa deslocamento + aceleração)
+            double novaPosX = corpoA.PosX + corpoA.VelX + (0.5 * acelX);
+            double novaPosY = corpoA.PosY + corpoA.VelY + (0.5 * acelY);
 
+            // Armazena o novo estado no dicionário compartilhado
             proximosEstados[corpoA] = (novaVelX, novaVelY, novaPosX, novaPosY);
-        }
+        }); // paralelismo vai ate aqui
+
 
         // Aplica os novos estados calculados
         for (int i = 0; i < QuantidadeCorpos; i++)
         {
             var corpo = Corpos[i];
-            if (corpo == null) continue;
+            if (corpo == null) continue; // ignora corpos inexistentes
 
-            var novoEstado = proximosEstados[corpo];
-            corpo.VelX = novoEstado.velX;
-            corpo.VelY = novoEstado.velY;
-            corpo.PosX = novoEstado.posX;
-            corpo.PosY = novoEstado.posY;
+            // Obtém o estado calculado na etapa paralela
+            if (proximosEstados.TryGetValue(corpo, out var novoEstado))
+            {
+                // Atualiza propriedades físicas
+                corpo.VelX = novoEstado.velX;
+                corpo.VelY = novoEstado.velY;
+                corpo.PosX = novoEstado.posX;
+                corpo.PosY = novoEstado.posY;
+            }
         }
 
-        // Trata colisões e fusões de corpos
-        var corposParaRemover = new HashSet<Corpo>();
-        var corposParaAdicionar = new List<Corpo>();
+        // Verifica e trata colisões entre corpos
+        var corposParaRemover = new HashSet<Corpo>(); // corpos fundidos/removidos
+        var corposParaAdicionar = new List<Corpo>();  // corpos resultantes de fusão
 
-        // Verifica todas as combinações de corpos para colisões
+        // Percorre todos os pares de corpos
         for (int i = 0; i < QuantidadeCorpos; i++)
         {
             for (int j = i + 1; j < QuantidadeCorpos; j++)
             {
                 Corpo c1 = Corpos[i];
                 Corpo c2 = Corpos[j];
-                if (c1   == null || c2 == null) continue;
+
+                if (c1 == null || c2 == null) continue; // ignora nulos
                 if (corposParaRemover.Contains(c1) || corposParaRemover.Contains(c2)) continue;
 
-                double dX        = c2.PosX - c1.PosX;
-                double dY        = c2.PosY - c1.PosY;
+                // Distância entre centros
+                double dX = c2.PosX - c1.PosX;
+                double dY = c2.PosY - c1.PosY;
                 double distancia = Math.Sqrt(dX * dX + dY * dY);
 
+                // Verifica colisão (interseção de raios)
                 if (distancia < (c1.Raio + c2.Raio))
                 {
+                    // Cria corpo resultante da fusão
                     Corpo corpoResultante = c1 + c2;
-                    corposParaAdicionar.Add(corpoResultante);
+
+                    // Marca corpos antigos para remoção
                     corposParaRemover.Add(c1);
                     corposParaRemover.Add(c2);
+
+                    // Adiciona novo corpo à lista de criação
+                    corposParaAdicionar.Add(corpoResultante);
                 }
             }
         }
 
-        // Atualiza o array de corpos removendo os fundidos e adicionando os novos
+        // Atualiza a lista principal de corpos se houve fusões
         if (corposParaRemover.Any())
         {
-            var proximosCorpos = new List<Corpo>(QuantidadeCorpos);
-            for (int i         = 0; i < QuantidadeCorpos; i++)
+            // Cria nova lista sem os corpos removidos
+            var proximosCorpos = new List<Corpo>(QuantidadeCorpos - corposParaRemover.Count);
+
+            // Mantém apenas corpos ativos
+            for (int i = 0; i < QuantidadeCorpos; i++)
             {
-                if (!corposParaRemover.Contains(Corpos[i]))
-                    proximosCorpos.Add(Corpos[i]);
+                var corpo = Corpos[i];
+                if (corpo != null && !corposParaRemover.Contains(corpo))
+                    proximosCorpos.Add(corpo);
             }
+
+            // Adiciona novos corpos fundidos
             proximosCorpos.AddRange(corposParaAdicionar);
 
-            Corpos           = proximosCorpos.ToArray();
+            // Atualiza lista principal e contador
+            Corpos = proximosCorpos.ToArray();
             QuantidadeCorpos = Corpos.Length;
         }
     }
