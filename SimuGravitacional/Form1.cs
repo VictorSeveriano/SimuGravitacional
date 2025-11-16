@@ -9,17 +9,24 @@ namespace SimuGravitacional
 {
     public partial class Form1 : Form
     {
-        private Universo universo = new Universo();               // universo que contém os corpos e lógica
-        private Timer timer       = new Timer();                  // timer do Windows Forms para passos da simulação
-        private GravitacaoDAO dao = new GravitacaoArquivoDAO();   // salvar e carregar em arquivo
+        private Universo universo = new Universo();          // universo que contém os corpos e lógica
+        private Timer timer = new Timer();                  // timer do Windows Forms para passos da simulação
 
-        private long iteracoesMax  = 0;       // número máximo de iterações a executar
+
+        private GravitacaoDAO dao = new GravitacaoMySQLDAO();   // salvar e carregar no MySQL
+
+        private long iteracoesMax = 0;       // número máximo de iterações a executar
         private long iteracaoAtual = 0;      // contador da iteração atual
-        private float escala       = 1f;    // escala usada para desenhar
 
-        // VARIÁVEIS PARA REPRISE
-        private Universo universoInicial  = null; // Armazena o estado inicial
+        // variaveis da visualização
+        private float escala = 1f;    // escala usada para desenhar
+        private float offsetX = 0f;   // offset X para centralizar a visualização
+        private float offsetY = 0f;   // offset Y para centralizar a visualização
+
+        // variaveis para reprise
+        private Universo universoInicial = null; // Armazena o estado inicial
         private long iteracoesParaReprise = 0;   // Se > 0, indica que estamos em modo reprise
+        private bool modoRepriseAtivo = false;   // Flag para saber se um reprise está rodando
 
         // Construtor do form
         public Form1()
@@ -36,15 +43,18 @@ namespace SimuGravitacional
             // modo reprise se um arquivo for carregado
             if (iteracoesParaReprise > 0 && universoInicial != null)
             {
-                universo      = universoInicial.Clone(); // Reseta para o estado inicial salvo
+                universo = universoInicial.Clone(); // Reseta para o estado inicial salvo
                 iteracaoAtual = 0;                      // Começa a reprise do zero
-                iteracoesMax  = iteracoesParaReprise;  // O alvo da reprise é a iteração salva
+                iteracoesMax = iteracoesParaReprise;  // O alvo da reprise é a iteração salva
 
                 // Atualiza UI para refletir o início da reprise
                 txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
+
+                AjustarEscala();
                 this.Invalidate();
 
                 // O intervalo do timer já foi configurado no btCarregar_Click
+                modoRepriseAtivo = true; // ativa a flag de reprise
                 timer.Start();
 
                 iteracoesParaReprise = 0; // Limpa a flag de reprise
@@ -55,19 +65,23 @@ namespace SimuGravitacional
             {
                 try
                 {
-                    int quantidade     = int.Parse(txtQtdCorpos.Text);
-                    iteracoesMax       = long.Parse(txtQtdIteracoes.Text);
-                    int intervaloTimer = int.Parse(txtTempoIteracoes.Text) / 10;
-                    double massaMin    = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
-                    double massaMax    = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
+                    int quantidade = int.Parse(txtQtdCorpos.Text);
+                    iteracoesMax = long.Parse(txtQtdIteracoes.Text);
+                    int intervaloTimer = int.Parse(txtTempoIteracoes.Text) * 10;
+                    double massaMin = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
+                    double massaMax = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
 
                     universo.InserirCorpos(quantidade, massaMin, massaMax, ClientSize.Width, ClientSize.Height);
 
                     // Salva o estado inicial para um futuro reprise
-                    universoInicial      = universo.Clone();
+                    universoInicial = universo.Clone();
                     iteracoesParaReprise = 0; // Garante que não está em modo reprise
 
+                    modoRepriseAtivo = false; // desativa a flag, simulação normal
+
                     txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
+
+                    AjustarEscala();
 
                     IniciarSimulacao(intervaloTimer);
                 }
@@ -83,18 +97,22 @@ namespace SimuGravitacional
         {
             try
             {
-                int quantidade  = int.Parse(txtQtdCorpos.Text);
+                int quantidade = int.Parse(txtQtdCorpos.Text);
                 double massaMin = double.Parse(txtMassaMin.Text, CultureInfo.InvariantCulture);
                 double massaMax = double.Parse(txtMassaMax.Text, CultureInfo.InvariantCulture);
 
                 universo.InserirCorpos(quantidade, massaMin, massaMax, ClientSize.Width, ClientSize.Height);
 
                 // Salva o estado inicial
-                universoInicial      = universo.Clone();
+                universoInicial = universo.Clone();
                 iteracoesParaReprise = 0; // Limpa a flag de reprise
+                modoRepriseAtivo = false; // Não é reprise
 
-                iteracaoAtual              = 0;
+                iteracaoAtual = 0;
                 txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
+
+                AjustarEscala();
+
                 this.Invalidate();
                 MessageBox.Show($"{quantidade} corpos gerados com sucesso!");
             }
@@ -111,6 +129,14 @@ namespace SimuGravitacional
             if (iteracaoAtual >= iteracoesMax || universo.QuantidadeCorpos <= 1)
             {
                 timer.Stop();
+
+                // Verifica se a simulação que parou era um reprise
+                if (modoRepriseAtivo)
+                {
+                    MessageBox.Show("Reprise da simulação concluído!");
+                    modoRepriseAtivo = false; // Desarma a flag
+                }
+
                 return;
             }
 
@@ -119,14 +145,14 @@ namespace SimuGravitacional
             iteracaoAtual++;
 
             txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
-            AjustarEscala();
+
             this.Invalidate();
         }
 
         // Método que inicia a simulação configurando o timer
         private void IniciarSimulacao(int intervalo)
         {
-            iteracaoAtual  = 0;
+            iteracaoAtual = 0;
             timer.Interval = intervalo;
             timer.Start();
             this.Invalidate();
@@ -138,6 +164,7 @@ namespace SimuGravitacional
             if (timer.Enabled)
             {
                 timer.Stop();
+                modoRepriseAtivo = false; // Reseta a flag em parada manual
                 MessageBox.Show("A simulação foi interrompida com sucesso!");
             }
             else
@@ -171,10 +198,10 @@ namespace SimuGravitacional
             }
 
             double larguraOcupada = maxX - minX;
-            double alturaOcupada  = maxY - minY;
+            double alturaOcupada = maxY - minY;
 
             int larguraDisponivel = this.ClientSize.Width - panel1.Width;
-            int alturaDisponivel  = this.ClientSize.Height;
+            int alturaDisponivel = this.ClientSize.Height;
 
             if (larguraOcupada == 0 || alturaOcupada == 0) return;
 
@@ -185,6 +212,13 @@ namespace SimuGravitacional
 
             if (float.IsInfinity(escala) || float.IsNaN(escala))
                 escala = 1f;
+
+            //calculo para centralizar 
+            double centroSimX = minX + (larguraOcupada / 2.0);
+            double centroSimY = minY + (alturaOcupada / 2.0);
+            float centroTelaX = (larguraDisponivel / 2.0f);
+            float centroTelaY = (alturaDisponivel / 2.0f);
+            offsetX = centroTelaX - (float)(centroSimX * escala);
 
             txtEscala.Text = escala.ToString("F10");
         }
@@ -198,18 +232,9 @@ namespace SimuGravitacional
 
             if (universo.Corpos != null && universo.QuantidadeCorpos > 0)
             {
-                double minX = double.MaxValue, minY = double.MaxValue;
-                for (int i = 0; i < universo.QuantidadeCorpos; i++)
-                {
-                    var corpo = universo.Corpos[i];
-                    if (corpo == null) continue;
-                    double corpoMinX = corpo.PosX - corpo.Raio;
-                    double corpoMinY = corpo.PosY - corpo.Raio;
-                    if (corpoMinX < minX) minX = corpoMinX;
-                    if (corpoMinY < minY) minY = corpoMinY;
-                }
-
-                g.TranslateTransform(-(float)minX * escala, -(float)minY * escala);
+                //  Aplica o PAN (calculado em AjustarEscala) para centralizar
+                g.TranslateTransform(offsetX, offsetY);
+                // Aplica o ZOOM (calculado em AjustarEscala)
                 g.ScaleTransform(escala, escala);
             }
 
@@ -237,58 +262,97 @@ namespace SimuGravitacional
         {
         }
 
-        // Botão Salvar, salva o estado INICIAL e o ATUAL com colisões
         private void btSalvar_Click(object sender, EventArgs e)
         {
             // Verifica se uma simulação foi iniciada e se universoInicial existe
             if (universoInicial == null)
             {
-                MessageBox.Show("Você precisa iniciar uma simulação (com 'Gerar Aleatório' ou 'Iniciar') antes de poder salvar.");
+                MessageBox.Show("Você precisa iniciar uma simulação antes de poder salvar.");
                 return;
             }
 
-            SaveFileDialog sfd   = new SaveFileDialog();
-            sfd.Filter           = "Arquivos TXT (*.txt)|*.txt";
-            if (sfd.ShowDialog() == DialogResult.OK)
+            try
             {
-                // Passamos 'universoInicial' para o reprise e 'universo' o estado ATUAL com colisões
-                dao.Salvar(sfd.FileName, universoInicial, universo, (int)iteracaoAtual, timer.Interval);
-                MessageBox.Show("A sua simulação foi salva com sucesso!");
+                // O primeiro parâmetro é ignorado pelo MySQLDAO, então passamos null.
+                // O timer.Interval é o tempo em milissegundos 
+                dao.Salvar(null, universoInicial, universo, (int)iteracaoAtual, timer.Interval);
+                MessageBox.Show("A sua simulação foi salva com sucesso no banco de dados!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao salvar no banco de dados: " + ex.Message);
             }
         }
 
-        // Botão "Carregar", carrega e prepara a reprise
+        // MÉTODO ATUALIZADO
         private void btCarregar_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd   = new OpenFileDialog();
-            ofd.Filter           = "Arquivos TXT (*.txt)|*.txt";
-            if (ofd.ShowDialog() == DialogResult.OK)
+            // Pára qualquer simulação em andamento
+            timer.Stop();
+            modoRepriseAtivo = false;
+
+            // Cria uma instância do novo formulário TelaBd
+            // Passa a instância 'dao' existente para o construtor do TelaBd
+            using (TelaBd telaSelecao = new TelaBd(this.dao))
             {
-                // Pára qualquer simulação em andamento
-                timer.Stop();
+                // Mostra o formulário de seleção como um diálogo modal
+                var resultado = telaSelecao.ShowDialog();
 
-                int iteracaoSalva, tempoIteracao;
+                // Verifica se o usuário clicou em "Carregar" (DialogResult.OK)
+                if (resultado == DialogResult.OK)
+                {
+                    // Pega o ID que o usuário selecionou no TelaBd
+                    string idParaCarregar = telaSelecao.IdSimulacaoSelecionada.ToString();
 
-                // Carrega o estado INICIAL e os parâmetros da reprise
-                // O DAO agora sabe procurar o bloco ESTADO_INICIAL
-                universo        = dao.Carregar(ofd.FileName, out iteracaoSalva, out tempoIteracao);
-                universoInicial = universo.Clone(); // Armazena o estado inicial carregado
+                    // Verifica se um ID válido foi selecionado
+                    if (string.IsNullOrWhiteSpace(idParaCarregar) || idParaCarregar == "-1")
+                    {
+                        return; // Algo deu errado ou foi cancelado
+                    }
 
-                iteracoesParaReprise = iteracaoSalva;          // Define o alvo da reprise
-                iteracoesMax         = iteracaoSalva;         // O "total" de iterações agora é o ponto salvo
-                timer.Interval       = tempoIteracao;
-                iteracaoAtual        = 0;                    // Começamos do zero
+                    try
+                    {
+                        // A lógica de carregamento restante é a mesma de antes
+                        int iteracaoSalva, tempoIteracao;
 
-                // Atualiza a UI para refletir o estado INICIAL
-                txtQtdCorpos.Text          = universo.QuantidadeCorpos.ToString();
-                txtQtdIteracoes.Text       = iteracoesMax.ToString(); // Mostra o total da reprise
-                txtTempoIteracoes.Text     = timer.Interval.ToString();
-                txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
+                        // Usamos o ID selecionado (como string) no lugar do caminho do arquivo
+                        universo = dao.Carregar(idParaCarregar, out iteracaoSalva, out tempoIteracao);
+                        universoInicial = universo.Clone(); // Armazena o estado inicial carregado
 
-                this.Invalidate(); // Desenha o estado inicial parado
+                        iteracoesParaReprise = iteracaoSalva;          // Define o alvo da reprise
+                        iteracoesMax = iteracaoSalva;         // O "total" de iterações agora é o ponto salvo
+                        timer.Interval = tempoIteracao;     // tempoIteracao já vem em milissegSgundos
+                        iteracaoAtual = 0;                    // Começamos do zero
 
-                MessageBox.Show("Simulação carregada. Clique em 'Iniciar' para reprisar.");
+                        // Atualiza a UI para refletir o estado INICIAL
+                        txtQtdCorpos.Text = universo.QuantidadeCorpos.ToString();
+                        txtQtdIteracoes.Text = iteracoesMax.ToString(); // Mostra o total da reprise
+                        // Divide por 10 para mostrar o valor original (ex: 50) no textbox
+                        txtTempoIteracoes.Text = (timer.Interval / 10).ToString();
+                        txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
+
+                        AjustarEscala();
+                        this.Invalidate(); // Desenha o estado inicial parado
+
+                        MessageBox.Show($"Simulação {idParaCarregar} carregada. Clique em 'Iniciar' para reprisar.");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Erro ao carregar simulação: " + ex.Message);
+                    }
+                }
+                // Se o resultado for 'Cancel' (o usuário fechou o TelaBd), não fazemos nada.
             }
+        }
+
+        private void txtQtdIteracoes_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtTempoIteracoes_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

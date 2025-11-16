@@ -72,6 +72,7 @@
             txtQtdIteracoes.Name = "txtQtdIteracoes";
             txtQtdIteracoes.Size = new Size(105, 23);
             txtQtdIteracoes.TabIndex = 3;
+            txtQtdIteracoes.TextChanged += txtQtdIteracoes_TextChanged;
             // 
             // lblTempoIteracoes
             // 
@@ -89,6 +90,7 @@
             txtTempoIteracoes.Name = "txtTempoIteracoes";
             txtTempoIteracoes.Size = new Size(105, 23);
             txtTempoIteracoes.TabIndex = 5;
+            txtTempoIteracoes.TextChanged += txtTempoIteracoes_TextChanged;
             // 
             // lblMassaMin
             // 
@@ -246,7 +248,7 @@
             ClientSize = new Size(1194, 636);
             Controls.Add(panel1);
             Name = "Form1";
-            Text = "Simulador Gravitacional by Grupo CTURB - Severiano";
+            Text = "Simulador Gravitacional by Grupo CTURB ";
             Load += Form1_Load;
             panel1.ResumeLayout(false);
             panel1.PerformLayout();

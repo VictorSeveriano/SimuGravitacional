@@ -4,8 +4,8 @@ using SimuGravitacional;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks; // Adicionado para Parallel.For
-using System.Collections.Concurrent; // Adicionado para ConcurrentDictionary
+using System.Threading.Tasks; 
+using System.Collections.Concurrent; 
 
 public class Universo
 {
@@ -74,7 +74,7 @@ public class Universo
             double velX = 0;
             double velY = 0;
 
-            Corpo novoCorpo = new Corpo($"Corpo{i + 1}", massa, densidade, posX, posY, velX, velY);
+            Corpo novoCorpo = new Corpo($"C{i + 1}", massa, densidade, posX, posY, velX, velY);
             AdicionarCorpo(novoCorpo);
         }
     }
@@ -138,7 +138,7 @@ public class Universo
                 if (distancia < 1e-6) continue; // evita divisões por zero
 
                 // Calcula força gravitacional
-                double forcaMag = (G * corpoA.Massa * corpoB.Massa) / (distancia * distancia);
+                double forcaMag = (G * corpoA.Massa * corpoB.Massa) / (distancia * distancia) * 500;
 
                 // Direciona a força nos eixos X e Y
                 double forcaX = forcaMag * (dX / distancia);

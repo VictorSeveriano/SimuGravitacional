@@ -85,7 +85,7 @@ public class Corpo
 
         // cria o corpo resultante com nome composto e parametros calculados
         Corpo corpoResultante = new Corpo(
-            nome: $"{c1.Nome}-{c2.Nome}", // concatena nomes para identificar origem
+            nome: $"{c1.Nome}_{c2.Nome}", // concatena nomes para identificar origem
             massa: massaTotal,
             densidade: densidadeFinal,
             posX: posFinalX,
