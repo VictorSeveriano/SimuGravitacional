@@ -283,8 +283,6 @@ namespace SimuGravitacional
                 MessageBox.Show("Erro ao salvar no banco de dados: " + ex.Message);
             }
         }
-
-        // MÉTODO ATUALIZADO
         private void btCarregar_Click(object sender, EventArgs e)
         {
             // Pára qualquer simulação em andamento
@@ -298,7 +296,7 @@ namespace SimuGravitacional
                 // Mostra o formulário de seleção como um diálogo modal
                 var resultado = telaSelecao.ShowDialog();
 
-                // Verifica se o usuário clicou em "Carregar" (DialogResult.OK)
+                // Verifica se o usuário clicou em "Carregar"
                 if (resultado == DialogResult.OK)
                 {
                     // Pega o ID que o usuário selecionou no TelaBd
@@ -327,7 +325,7 @@ namespace SimuGravitacional
                         // Atualiza a UI para refletir o estado INICIAL
                         txtQtdCorpos.Text = universo.QuantidadeCorpos.ToString();
                         txtQtdIteracoes.Text = iteracoesMax.ToString(); // Mostra o total da reprise
-                        // Divide por 10 para mostrar o valor original (ex: 50) no textbox
+                        // Divide por 10 para mostrar o valor original no textbox
                         txtTempoIteracoes.Text = (timer.Interval / 10).ToString();
                         txtQtdCorposRestantes.Text = universo.QuantidadeCorpos.ToString();
 

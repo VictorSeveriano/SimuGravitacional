@@ -138,7 +138,7 @@ public class Universo
                 if (distancia < 1e-6) continue; // evita divisões por zero
 
                 // Calcula força gravitacional
-                double forcaMag = (G * corpoA.Massa * corpoB.Massa) / (distancia * distancia) * 500;
+                double forcaMag = (G * corpoA.Massa * corpoB.Massa) / (distancia * distancia);
 
                 // Direciona a força nos eixos X e Y
                 double forcaX = forcaMag * (dX / distancia);
