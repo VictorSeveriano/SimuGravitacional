@@ -10,6 +10,6 @@ namespace SimuGravitacional.ConfigBd
 {
     internal class ConfiguracaoBd
     {
-        internal static readonly string ConnectionString = "Server=localhost;Port=3306;Database=simulador_gravitacional;Uid=root;Pwd=teste123";
+        internal static readonly string ConnectionString = "Server=localhost;Port=3306;Database=simulador_gravitacional;Uid=root;Pwd=suasenhaqui";
     }
 }

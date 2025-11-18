@@ -10,7 +10,7 @@ namespace SimuGravitacional.Abstrato
     {
         public override void Salvar(string caminhoArquivo, Universo universoInicial, Universo universoAtual, int iteracaoAtual, int tempoIteracao)
         {
-            // O parâmetro 'caminhoArquivo' é herdado da classe abstrata, mas não é usado aqui.
+            // O parâmetro caminhoArquivo é herdado da classe abstrata, mas não é usado aqui.
 
             long numSimulacao = -1;
             int qtdCorposInicial = universoInicial.QuantidadeCorpos;
@@ -27,7 +27,7 @@ namespace SimuGravitacional.Abstrato
                         var cmdSimulacao = new MySqlCommand(
                             "INSERT INTO Simulacao (QtdCorposInicial, NumInteracoes, TempoInteracoes, DataSimulacao) " +
                             "VALUES (@QtdCorposInicial, @NumInteracoes, @TempoInteracoes, NOW()); " +
-                            "SELECT LAST_INSERT_ID();", // Pega o ID auto-incrementado
+                            "SELECT LAST_INSERT_ID();", // Pega o ID autoincrementado
                             conn, transaction);
 
                         cmdSimulacao.Parameters.AddWithValue("@QtdCorposInicial", qtdCorposInicial);
@@ -36,7 +36,7 @@ namespace SimuGravitacional.Abstrato
 
                         numSimulacao = Convert.ToInt64(cmdSimulacao.ExecuteScalar());
 
-                        // Salvar o ESTADO INICIAL 
+                        // Salva o estado inicial
                         // Inserir o Resultado 
                         var cmdResInicial = new MySqlCommand("INSERT INTO Resultados (NumSimulacao, NumInteracao) VALUES (@NumSim, 0)", conn, transaction);
                         cmdResInicial.Parameters.AddWithValue("@NumSim", numSimulacao);

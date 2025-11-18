@@ -6,9 +6,9 @@ namespace SimuGravitacional.Abstrato
     // Classe para transportar os dados de resumo
     public class ResumoSimulacao
     {
-        public int IdSimulacao { get; set; }
-        public DateTime DataSimulacao { get; set; }
-        public int QtdCorposInicial { get; set; }
+        public int      IdSimulacao      { get; set; }
+        public DateTime DataSimulacao    { get; set; }
+        public int      QtdCorposInicial { get; set; }
     }
 
     public abstract class GravitacaoDAO
